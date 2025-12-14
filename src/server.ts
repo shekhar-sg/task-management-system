@@ -1,9 +1,11 @@
-import express, { type Express, type Request, type Response } from "express";
+import express, {type Express, type Request, type Response} from "express";
+import morgan from "morgan";
 
-const port = 5000;
+const port = process.env.PORT || 5000;
 const app: Express = express();
 
 app.use(express.json());
+app.use(morgan("dev"));
 
 app.get("/", (_req: Request, res: Response) => {
   res.send("initial setup with dependencies and formatter");
