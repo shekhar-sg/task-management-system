@@ -1,0 +1,14 @@
+node_modules/
+dist/
+build/
+.env
+uploads/*
+!uploads/.gitkeep
+signed/*
+!signed/.gitkeep
+*.log
+.DS_Store
+coverage/
+.vscode/
+.idea/
+
