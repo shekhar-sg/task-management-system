@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import type {LoginInput, RegisterInput} from "./auth.dto.js";
+import type {LoginInput, RegisterInput, UpdateProfileInput} from "./auth.dto.js";
 import {authRepository} from "./auth.repository.js";
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
@@ -31,7 +31,7 @@ export const authService = {
     if (!isPasswordValid) {
       throw new Error(`Invalid email or password`);
     }
-    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "5d" });
+    const token = jwt.sign({ userID: user.id }, JWT_SECRET, { expiresIn: "5d" });
     return {
       token,
       user: {
@@ -40,5 +40,23 @@ export const authService = {
         email: user.email,
       },
     };
+  },
+
+  getProfile: async (id: string) => {
+    const user = await authRepository.findById(id);
+    if (!user) {
+      throw new Error(`User not found`);
+    }
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
+  },
+
+  updateProfile: async (id: string, data: UpdateProfileInput) => {
+    return authRepository.updateUser(id, data);
   },
 };

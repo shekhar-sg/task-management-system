@@ -1,6 +1,7 @@
-import type {Request, Response} from "express";
-import {LoginDto, RegisterDto} from "./auth.dto.js";
-import {authService} from "./auth.service.js";
+import type { Request, Response } from "express";
+import type { AuthRequest } from "../../types/auth.js";
+import { LoginDto, RegisterDto, UpdateProfileDto } from "./auth.dto.js";
+import { authService } from "./auth.service.js";
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -48,4 +49,37 @@ export const logout = async (_req: Request, res: Response) => {
   res.status(200).json({
     message: "Logged out successfully",
   });
+};
+
+export const getProfile = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const profile = await authService.getProfile(userId);
+
+    return res.status(200).json({
+      profile,
+      message: "Profile fetched successfully",
+    });
+  } catch (error) {
+    return res.status(400).json({
+      message: (error as Error).message ?? "Failed to fetch profile",
+    });
+  }
+};
+
+export const updateProfile = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const data = UpdateProfileDto.parse(req.body);
+
+    const updatedUser = await authService.updateProfile(userId, data);
+    return res.status(200).json({
+      user: updatedUser,
+      message: "Profile updated successfully",
+    });
+  } catch (error) {
+    return res.status(400).json({
+      message: (error as Error).message ?? "Failed to update profile",
+    });
+  }
 };
