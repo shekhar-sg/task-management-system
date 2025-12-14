@@ -6,3 +6,79 @@ datasource db {
   provider = "mongodb"
   url      = env("DATABASE_URL")
 }
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum Status {
+  TODO
+  IN_PROGRESS
+  REVIEW
+  COMPLETED
+}
+
+enum NotificationType {
+  TASK_ASSIGNED
+}
+
+enum TaskAuditAction {
+  STATUS_CHANGED
+  PRIORITY_CHANGED
+  ASSIGNED
+  UNASSIGNED
+  TASK_CREATED
+  TASK_UPDATED
+  TASK_DELETED
+}
+
+model User {
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  email         String         @unique
+  password      String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  tasksCreated  Task[]         @relation("CreatedTasks")
+  tasksAssigned Task[]         @relation("AssignedTasks")
+  notification  Notification[]
+}
+
+model Task {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  title        String
+  description  String?
+  dueDate      DateTime
+  priority     Priority
+  status       Status
+  creatorId    String   @db.ObjectId
+  assignedToId String?  @db.ObjectId
+  creator      User     @relation("CreatedTasks", fields: [creatorId], references: [id])
+  assignedTo   User?    @relation("AssignedTasks", fields: [assignedToId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Notification {
+  id        String           @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String           @db.ObjectId
+  taskId    String           @db.ObjectId
+  type      NotificationType
+  message   String
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  User      User             @relation(fields: [userId], references: [id])
+}
+
+model AuditLog {
+  id        String          @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String          @db.ObjectId
+  taskId    String          @db.ObjectId
+  action    TaskAuditAction
+  oldValue  String?
+  newValue  String?
+  timestamp DateTime        @default(now())
+}
