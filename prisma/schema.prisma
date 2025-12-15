@@ -45,6 +45,7 @@ model User {
   tasksCreated  Task[]         @relation("CreatedTasks")
   tasksAssigned Task[]         @relation("AssignedTasks")
   notification  Notification[]
+  AuditLog      AuditLog[]
 }
 
 model Task {
@@ -61,6 +62,7 @@ model Task {
   notification Notification[]
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
+  AuditLog     AuditLog[]
 }
 
 model Notification {
@@ -83,4 +85,6 @@ model AuditLog {
   oldValue  String?
   newValue  String?
   timestamp DateTime        @default(now())
+  user      User            @relation(fields: [userId], references: [id])
+  task      Task            @relation(fields: [taskId], references: [id])
 }

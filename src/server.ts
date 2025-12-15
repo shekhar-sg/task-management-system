@@ -3,6 +3,7 @@ import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import express, { type Express } from "express";
 import morgan from "morgan";
+import auditRoutes from "./modules/audit/audit.routes.js";
 import authRoutes from "./modules/auth/auth.routes.js";
 import notificationRoutes from "./modules/notification/notification.routes.js";
 import taskRoutes from "./modules/task/task.routes.js";
@@ -19,6 +20,7 @@ app.use(cookieParser());
 app.use("/api/auth", authRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/audit", auditRoutes);
 
 const server = createServer(app);
 initSocket(server);

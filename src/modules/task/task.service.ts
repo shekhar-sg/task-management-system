@@ -1,12 +1,13 @@
 import {type Prisma, Status} from "@prisma/client";
+import {getIO} from "../../socket/index.js";
+import {auditService} from "../audit/audit.service.js";
+import {notificationService} from "../notification/notification.service.js";
 import type {CreateTaskInput, TaskQueryInput, UpdateTaskInput} from "./task.dto.js";
 import {taskRepository} from "./task.repository.js";
-import {getIO} from "../../socket/index.js";
-import {notificationService} from "../notification/notification.service.js";
 
 export const taskService = {
   createTask: async (userId: string, data: CreateTaskInput) => {
-    return taskRepository.create({
+    const task = await taskRepository.create({
       title: data.title,
       description: data.description,
       dueDate: data.dueDate,
@@ -23,6 +24,83 @@ export const taskService = {
         },
       }),
     });
+
+    await auditService.log(userId, task.id, "TASK_CREATED");
+    return task;
+  },
+
+  updateTask: async (taskId: string, userId: string, data: UpdateTaskInput) => {
+    const task = await taskRepository.findById(taskId);
+    if (!task) {
+      throw new Error("Task not found");
+    }
+    if (!canEditTask(task, userId)) {
+      throw new Error("Forbidden");
+    }
+    const updatedTask = await taskRepository.update(taskId, {
+      ...data,
+      ...(data.dueDate && { dueDate: new Date(data.dueDate) }),
+      ...(data.assignedToId && {
+        assignedTo: { connect: { id: data.assignedToId } },
+      }),
+      ...(data.assignedToId === null && {
+        assignedTo: { disconnect: true },
+      }),
+    });
+
+    const io = getIO();
+    io.emit("task:updated", updatedTask);
+
+    if (data.status && data.status !== task.status) {
+      await auditService.log(userId, taskId, "STATUS_CHANGED", task.status, data.status);
+    }
+
+    if (data.priority && data.priority !== task.priority) {
+      await auditService.log(userId, taskId, "PRIORITY_CHANGED", task.priority, data.priority);
+    }
+
+    if (task.assignedToId !== data.assignedToId) {
+      await auditService.log(
+        userId,
+        taskId,
+        data.assignedToId ? "ASSIGNED" : "UNASSIGNED",
+        data.assignedToId ?? "UNASSIGNED",
+        task.assignedToId ?? "UNASSIGNED"
+      );
+      if (data.assignedToId) {
+        io.to(`user:${data.assignedToId}`).emit("task:assigned", {
+          taskId: updatedTask.id,
+          title: updatedTask.title,
+        });
+
+        await notificationService.createTaskAssignmentNotification(
+          updatedTask.id,
+          data.assignedToId,
+          updatedTask.title
+        );
+      }
+    }
+
+    return updatedTask;
+  },
+
+  deleteTask: async (taskId: string, userId: string) => {
+    const task = await taskRepository.findById(taskId);
+    if (!task) {
+      throw new Error("Task not found");
+    }
+    if (task.creatorId !== userId) {
+      throw new Error("Forbidden");
+    }
+    await taskRepository.delete(taskId);
+    await auditService.log(userId, taskId, "TASK_DELETED");
+
+    getIO().emit("task:deleted", {
+      id: taskId,
+      deleted: true,
+    });
+
+    return true;
   },
 
   getTaskById: async (taskId: string) => {
@@ -54,55 +132,6 @@ export const taskService = {
     const orderBy = filters.sortByDueDate ? { dueDate: filters.sortByDueDate } : undefined;
 
     return taskRepository.findMany(where, orderBy);
-  },
-
-  updateTask: async (taskId: string, userId: string, data: UpdateTaskInput) => {
-    const task = await taskRepository.findById(taskId);
-    if (!task) {
-      throw new Error("Task not found");
-    }
-    if (!canEditTask(task, userId)) {
-      throw new Error("Forbidden");
-    }
-    const updatedTask = await taskRepository.update(taskId, {
-      ...data,
-      ...(data.dueDate && { dueDate: new Date(data.dueDate) }),
-      ...(data.assignedToId && {
-        assignedTo: { connect: { id: data.assignedToId } },
-      }),
-      ...(data.assignedToId === null && {
-        assignedTo: { disconnect: true },
-      }),
-    });
-
-    const io = getIO();
-    io.emit("task:updated", updatedTask);
-
-    if (data.assignedToId && task.assignedToId !== data.assignedToId) {
-      io.to(`user:${data.assignedToId}`).emit("task:assigned", {
-        taskId: updatedTask.id,
-        title: updatedTask.title,
-      });
-
-      await notificationService.createTaskAssignmentNotification(
-        updatedTask.id,
-        data.assignedToId,
-        updatedTask.title
-      );
-    }
-
-    return updatedTask;
-  },
-
-  deleteTask: async (taskId: string, userId: string) => {
-    const task = await taskRepository.findById(taskId);
-    if (!task) {
-      throw new Error("Task not found");
-    }
-    if (task.creatorId !== userId) {
-      throw new Error("Forbidden");
-    }
-    return taskRepository.delete(taskId);
   },
 };
 
