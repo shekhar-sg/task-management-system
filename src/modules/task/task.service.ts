@@ -1,6 +1,8 @@
 import {type Prisma, Status} from "@prisma/client";
 import type {CreateTaskInput, TaskQueryInput, UpdateTaskInput} from "./task.dto.js";
 import {taskRepository} from "./task.repository.js";
+import {getIO} from "../../socket/index.js";
+import {notificationService} from "../notification/notification.service.js";
 
 export const taskService = {
   createTask: async (userId: string, data: CreateTaskInput) => {
@@ -62,7 +64,34 @@ export const taskService = {
     if (!canEditTask(task, userId)) {
       throw new Error("Forbidden");
     }
-    return taskRepository.update(taskId, data);
+    const updatedTask = await taskRepository.update(taskId, {
+      ...data,
+      ...(data.dueDate && { dueDate: new Date(data.dueDate) }),
+      ...(data.assignedToId && {
+        assignedTo: { connect: { id: data.assignedToId } },
+      }),
+      ...(data.assignedToId === null && {
+        assignedTo: { disconnect: true },
+      }),
+    });
+
+    const io = getIO();
+    io.emit("task:updated", updatedTask);
+
+    if (data.assignedToId && task.assignedToId !== data.assignedToId) {
+      io.to(`user:${data.assignedToId}`).emit("task:assigned", {
+        taskId: updatedTask.id,
+        title: updatedTask.title,
+      });
+
+      await notificationService.createTaskAssignmentNotification(
+        updatedTask.id,
+        data.assignedToId,
+        updatedTask.title
+      );
+    }
+
+    return updatedTask;
   },
 
   deleteTask: async (taskId: string, userId: string) => {

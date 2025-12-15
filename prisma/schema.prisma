@@ -48,18 +48,19 @@ model User {
 }
 
 model Task {
-  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  id           String         @id @default(auto()) @map("_id") @db.ObjectId
   title        String
   description  String?
   dueDate      DateTime
   priority     Priority
   status       Status
-  creatorId    String   @db.ObjectId
-  assignedToId String?  @db.ObjectId
-  creator      User     @relation("CreatedTasks", fields: [creatorId], references: [id])
-  assignedTo   User?    @relation("AssignedTasks", fields: [assignedToId], references: [id])
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  creatorId    String         @db.ObjectId
+  assignedToId String?        @db.ObjectId
+  creator      User           @relation("CreatedTasks", fields: [creatorId], references: [id])
+  assignedTo   User?          @relation("AssignedTasks", fields: [assignedToId], references: [id])
+  notification Notification[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
 }
 
 model Notification {
@@ -70,7 +71,8 @@ model Notification {
   message   String
   isRead    Boolean          @default(false)
   createdAt DateTime         @default(now())
-  User      User             @relation(fields: [userId], references: [id])
+  user      User             @relation(fields: [userId], references: [id])
+  task      Task             @relation(fields: [taskId], references: [id])
 }
 
 model AuditLog {
