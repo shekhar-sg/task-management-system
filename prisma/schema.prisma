@@ -23,6 +23,8 @@ enum Status {
 
 enum NotificationType {
   TASK_ASSIGNED
+  TASK_UPDATED
+  TASK_DELETED
 }
 
 enum TaskAuditAction {

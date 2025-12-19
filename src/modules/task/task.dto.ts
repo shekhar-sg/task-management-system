@@ -19,12 +19,18 @@ export const UpdateTaskDto = z.object({
   assignedToId: z.string().nullable().optional(),
 });
 
+const arrayify = <T extends z.ZodTypeAny>(schema: T) =>
+    z.preprocess(
+        (val:string) => val?.split(","),
+        z.array(schema).optional()
+    );
+
 export const TaskQueryDto = z.object({
-  view: z.enum(["CREATED", "ASSIGNED", "ALL"]).optional(),
-  status: z.enum(Status).optional(),
-  priority: z.enum(Priority).optional(),
+  view: arrayify(z.enum(["CREATED", "ASSIGNED", "ALL"])),
+  status: arrayify(z.enum(Status)),
+  priority: arrayify(z.enum(Priority)),
   sortByDueDate: z.enum(["asc", "desc"]).optional(),
-  overdue: z.boolean().optional(),
+  overdue: z.string().transform((val) => val === "true").pipe(z.boolean()).optional(),
 });
 
 export type CreateTaskInput = z.infer<typeof CreateTaskDto>;

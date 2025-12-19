@@ -5,7 +5,10 @@ import {userService} from "./user.service.js";
 export const getUsers = async (_req: AuthRequest, res: Response) => {
   try {
     const users = await userService.getAllUsers();
-    return res.status(200).json(users);
+    return res.status(200).json({
+      message: "Success",
+        users,
+    });
   } catch {
     return res.status(500).json({ message: "Internal server error" });
   }

@@ -37,13 +37,14 @@ export const taskService = {
     if (!canEditTask(task, userId)) {
       throw new Error("Forbidden");
     }
+    const { assignedToId, ...rest } = data;
     const updatedTask = await taskRepository.update(taskId, {
-      ...data,
-      ...(data.dueDate && { dueDate: new Date(data.dueDate) }),
-      ...(data.assignedToId && {
-        assignedTo: { connect: { id: data.assignedToId } },
+      ...rest,
+      ...(rest.dueDate && { dueDate: new Date(rest.dueDate) }),
+      ...(assignedToId && {
+        assignedTo: { connect: { id: assignedToId } },
       }),
-      ...(data.assignedToId === null && {
+      ...(assignedToId === null && {
         assignedTo: { disconnect: true },
       }),
     });
@@ -59,23 +60,24 @@ export const taskService = {
       await auditService.log(userId, taskId, "PRIORITY_CHANGED", task.priority, data.priority);
     }
 
-    if (task.assignedToId !== data.assignedToId) {
+    if (task.assignedToId !== assignedToId) {
       await auditService.log(
         userId,
         taskId,
-        data.assignedToId ? "ASSIGNED" : "UNASSIGNED",
-        data.assignedToId ?? "UNASSIGNED",
+        assignedToId ? "ASSIGNED" : "UNASSIGNED",
+        assignedToId ?? "UNASSIGNED",
         task.assignedToId ?? "UNASSIGNED"
       );
-      if (data.assignedToId) {
-        io.to(`user:${data.assignedToId}`).emit("task:assigned", {
+      if (assignedToId) {
+        io.to(`user:${assignedToId}`).emit("task:assigned", {
           taskId: updatedTask.id,
           title: updatedTask.title,
+          assignedBy: userId,
         });
 
         await notificationService.createTaskAssignmentNotification(
           updatedTask.id,
-          data.assignedToId,
+          assignedToId,
           updatedTask.title
         );
       }
@@ -112,23 +114,35 @@ export const taskService = {
   },
 
   listTasks: async (userid: string, filters: TaskQueryInput) => {
-    const baseWhere: Prisma.TaskWhereInput = {};
-    if (filters.view === "CREATED") {
-      baseWhere.creatorId = userid;
-    } else if (filters.view === "ASSIGNED") {
-      baseWhere.assignedToId = userid;
-    } else {
-      baseWhere.OR = [{ creatorId: userid }, { assignedToId: userid }];
+    const where: Prisma.TaskWhereInput = {};
+    if (filters.view?.length) {
+      const viewConditions: Prisma.TaskWhereInput[] = [];
+      if (filters.view.includes("CREATED")) {
+        viewConditions.push({ creatorId: userid });
+      }
+      if (filters.view.includes("ASSIGNED")) {
+        viewConditions.push({ assignedToId: userid });
+      }
+      if (viewConditions.length) {
+        where.OR = viewConditions;
+      }
+      if (!where.OR?.length) delete where.OR;
     }
-    const where: Prisma.TaskWhereInput = {
-      ...baseWhere,
-      ...(filters.status && { status: filters.status }),
-      ...(filters.priority && { priority: filters.priority }),
-      ...(filters.overdue && {
-        dueDate: { lt: new Date() },
-        status: { not: Status.COMPLETED },
-      }),
-    };
+    if (filters.priority?.length) {
+      where.priority = { in: filters.priority };
+    }
+    if (filters.status?.length) {
+      where.status = { in: filters.status };
+    }
+    if (filters.overdue) {
+      where.dueDate = { lt: new Date() };
+        where.status = { not: Status.COMPLETED };
+      // if (typeof where.status === "object" && where.status !== null) {
+      //   where.status = (where.status as object)
+      //     ? { ...where.status, not: Status.COMPLETED }
+      //     : { not: Status.COMPLETED };
+      // }
+    }
     const orderBy = filters.sortByDueDate ? { dueDate: filters.sortByDueDate } : undefined;
 
     return taskRepository.findMany(where, orderBy);

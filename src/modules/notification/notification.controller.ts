@@ -9,7 +9,7 @@ export const getMyNotifications = async (req: AuthRequest, res: Response) => {
 
     return res.status(200).json({
       message: "Notifications retrieved successfully",
-      data: notifications,
+      notifications,
     });
   } catch (error) {
     return res.status(500).json({
@@ -23,7 +23,11 @@ export const markAsRead = async (req: AuthRequest, res: Response) => {
     const userId = req.user!.id;
     const { id } = req.params;
 
-    await notificationService.markAsRead(id, userId);
+    const notification = await notificationService.markAsRead(id, userId);
+    return res.status(200).json({
+      message: "MarkAsRead successfully",
+      notification,
+    });
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === "Notification not found") {

@@ -1,6 +1,6 @@
-import type { Server as HttpServer } from "node:http";
+import type {Server as HttpServer} from "node:http";
 import jwt from "jsonwebtoken";
-import { Server } from "socket.io";
+import {Server} from "socket.io";
 
 interface SocketUserPayload {
   id: string;
@@ -10,7 +10,12 @@ interface SocketUserPayload {
 let io: Server;
 
 export const initSocket = (server: HttpServer) => {
-  io = new Server(server);
+  io = new Server(server, {
+    cors: {
+      origin: process.env.CLIENT_URL,
+      credentials: true,
+    },
+  });
   io.use((socket, next) => {
     try {
       const cookie = socket.handshake.headers.cookie;
