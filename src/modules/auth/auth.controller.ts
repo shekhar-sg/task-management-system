@@ -22,10 +22,11 @@ export const login = async (req: Request, res: Response) => {
   try {
     const data = LoginDto.parse(req.body);
     const result = await authService.login(data);
+    const isProduction = process.env.NODE_ENV === "production";
     res.cookie("access_token", result.token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "none",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
       maxAge: 5 * 24 * 60 * 60 * 1000,
     });
 
