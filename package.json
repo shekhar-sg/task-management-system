@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "A simple task management system backend with TypeScript and Prisma",
   "type": "module",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
