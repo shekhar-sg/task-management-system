@@ -20,7 +20,7 @@ export const taskRepository = {
   },
   findById: (id: string): Promise<Task | null> => {
     return prisma.task.findUnique({
-      where: { id },
+      where: { id, isDeleted: false },
       include: {
         creator: creatorSelect,
         assignedTo: assignedToSelect,
@@ -32,7 +32,10 @@ export const taskRepository = {
     orderBy?: Prisma.TaskOrderByWithRelationInput
   ): Promise<Task[]> => {
     return prisma.task.findMany({
-      where,
+      where: {
+        ...where,
+        isDeleted: false
+      },
       include: {
         creator: creatorSelect,
         assignedTo: assignedToSelect,
@@ -42,7 +45,7 @@ export const taskRepository = {
   },
   update: (id: string, data: Prisma.TaskUpdateInput): Promise<Task> => {
     return prisma.task.update({
-      where: { id },
+      where: { id, isDeleted: false },
       data,
       include: {
         creator: creatorSelect,
@@ -50,9 +53,10 @@ export const taskRepository = {
       },
     });
   },
-  delete: (id: string): Promise<Task> => {
-    return prisma.task.delete({
+  softDelete: (id: string): Promise<Task> => {
+    return prisma.task.update({
       where: { id },
+      data: { isDeleted: true },
       include: {
         creator: creatorSelect,
         assignedTo: assignedToSelect,

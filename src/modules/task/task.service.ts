@@ -113,10 +113,12 @@ export const taskService = {
     if (task.creatorId !== userId) {
       throw new Error("Forbidden");
     }
-    await taskRepository.delete(taskId);
+
+    await taskRepository.softDelete(taskId);
     await auditService.log(userId, taskId, "TASK_DELETED");
 
     io.emit("task:deleted", {
+      taskId,
       title: task.title,
       deleted: true,
     });

@@ -57,6 +57,7 @@ model Task {
   dueDate      DateTime
   priority     Priority
   status       Status
+  isDeleted    Boolean        @default(false)
   creatorId    String         @db.ObjectId
   assignedToId String?        @db.ObjectId
   creator      User           @relation("CreatedTasks", fields: [creatorId], references: [id])
