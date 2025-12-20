@@ -117,7 +117,7 @@ export const taskService = {
     await auditService.log(userId, taskId, "TASK_DELETED");
 
     io.emit("task:deleted", {
-      id: taskId,
+      title: task.title,
       deleted: true,
     });
 
