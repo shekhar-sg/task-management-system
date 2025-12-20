@@ -7,6 +7,7 @@ import { taskRepository } from "./task.repository.js";
 
 export const taskService = {
   createTask: async (userId: string, data: CreateTaskInput) => {
+    const io = getIO();
     const task = await taskRepository.create({
       title: data.title,
       description: data.description,
@@ -25,11 +26,31 @@ export const taskService = {
       }),
     });
 
+    if (task.assignedToId) {
+      await auditService.log(
+        userId,
+        task.id,
+        "ASSIGNED",
+        "UNASSIGNED",
+        task.assignedToId ?? "UNASSIGNED"
+      );
+      notificationService
+        .createTaskAssignmentNotification(task.id, task.assignedToId, task.title)
+        .then(({ user: { name } }) => {
+          io.to(`user:${task.assignedToId}`).emit("task:assigned", {
+            taskId: task.id,
+            title: task.title,
+            assignedBy: name,
+          });
+        });
+    }
+
     await auditService.log(userId, task.id, "TASK_CREATED");
     return task;
   },
 
   updateTask: async (taskId: string, userId: string, data: UpdateTaskInput) => {
+    const io = getIO();
     const task = await taskRepository.findById(taskId);
     if (!task) {
       throw new Error("Task not found");
@@ -49,7 +70,6 @@ export const taskService = {
       }),
     });
 
-    const io = getIO();
     io.emit("task:updated", updatedTask);
 
     if (data.status && data.status !== task.status) {
@@ -85,6 +105,7 @@ export const taskService = {
   },
 
   deleteTask: async (taskId: string, userId: string) => {
+    const io = getIO();
     const task = await taskRepository.findById(taskId);
     if (!task) {
       throw new Error("Task not found");
@@ -95,7 +116,7 @@ export const taskService = {
     await taskRepository.delete(taskId);
     await auditService.log(userId, taskId, "TASK_DELETED");
 
-    getIO().emit("task:deleted", {
+    io.emit("task:deleted", {
       id: taskId,
       deleted: true,
     });
@@ -135,11 +156,6 @@ export const taskService = {
     if (filters.overdue) {
       where.dueDate = { lt: new Date() };
       where.status = { not: Status.COMPLETED };
-      // if (typeof where.status === "object" && where.status !== null) {
-      //   where.status = (where.status as object)
-      //     ? { ...where.status, not: Status.COMPLETED }
-      //     : { not: Status.COMPLETED };
-      // }
     }
     const orderBy = filters.sortByDueDate ? { dueDate: filters.sortByDueDate } : undefined;
 
