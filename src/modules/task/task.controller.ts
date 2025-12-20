@@ -37,7 +37,6 @@ export const listTasks = async (req: AuthRequest, res: Response) => {
     const { searchParams } = new URL(req.originalUrl, `http://${req.headers.host}`);
     const requestParams = Object.fromEntries(searchParams.entries());
     const filters = TaskQueryDto.parse(requestParams);
-    console.log({ requestParams, filters });
     const tasks = await taskService.listTasks(userId, filters);
     return res.status(200).json({
       message: "Tasks retrieved successfully",

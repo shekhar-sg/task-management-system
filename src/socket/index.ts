@@ -18,7 +18,6 @@ export const initSocket = (server: HttpServer) => {
   io.use((socket, next) => {
     try {
       const cookie = socket.handshake.headers.cookie;
-      console.log({ cookie });
       if (!cookie) return next(new Error("Unauthorized"));
       const token = cookie
         .split("; ")
@@ -26,10 +25,8 @@ export const initSocket = (server: HttpServer) => {
         ?.split("=")[1];
 
       if (!token) return next(new Error("Unauthorized"));
-      console.log("user", jwt.verify(token, process.env.JWT_SECRET!) as SocketUserPayload);
 
       socket.data.user = jwt.verify(token, process.env.JWT_SECRET!) as SocketUserPayload;
-      console.log("socket data user", socket.data.user);
       next();
     } catch {
       next(new Error("Unauthorized"));
