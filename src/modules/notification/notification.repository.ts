@@ -3,7 +3,16 @@ import {prisma} from "../../lib/prisma.js";
 
 export const notificationRepository = {
   create: (data: Prisma.NotificationCreateInput) => {
-    return prisma.notification.create({ data });
+    return prisma.notification.create({
+      data,
+      select: {
+        user: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
   },
 
   findByUserId: (userId: string) => {

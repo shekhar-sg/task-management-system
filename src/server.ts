@@ -3,7 +3,6 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import dotenv from "dotenv";
 import express, { type Express } from "express";
-import morgan from "morgan";
 import auditRoutes from "./modules/audit/audit.routes.js";
 import authRoutes from "./modules/auth/auth.routes.js";
 import notificationRoutes from "./modules/notification/notification.routes.js";
@@ -22,7 +21,6 @@ app.use(
   })
 );
 app.use(express.json());
-app.use(morgan("dev"));
 app.use(cookieParser());
 
 app.use("/api/auth", authRoutes);

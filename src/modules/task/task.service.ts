@@ -69,17 +69,15 @@ export const taskService = {
         task.assignedToId ?? "UNASSIGNED"
       );
       if (assignedToId) {
-        io.to(`user:${assignedToId}`).emit("task:assigned", {
-          taskId: updatedTask.id,
-          title: updatedTask.title,
-          assignedBy: userId,
-        });
-
-        await notificationService.createTaskAssignmentNotification(
-          updatedTask.id,
-          assignedToId,
-          updatedTask.title
-        );
+        notificationService
+          .createTaskAssignmentNotification(updatedTask.id, assignedToId, updatedTask.title)
+          .then(({user:{name}}) => {
+            io.to(`user:${assignedToId}`).emit("task:assigned", {
+              taskId: updatedTask.id,
+              title: updatedTask.title,
+              assignedBy: name,
+            });
+          });
       }
     }
 
@@ -136,7 +134,7 @@ export const taskService = {
     }
     if (filters.overdue) {
       where.dueDate = { lt: new Date() };
-        where.status = { not: Status.COMPLETED };
+      where.status = { not: Status.COMPLETED };
       // if (typeof where.status === "object" && where.status !== null) {
       //   where.status = (where.status as object)
       //     ? { ...where.status, not: Status.COMPLETED }

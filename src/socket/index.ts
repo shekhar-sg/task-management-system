@@ -3,8 +3,7 @@ import jwt from "jsonwebtoken";
 import {Server} from "socket.io";
 
 interface SocketUserPayload {
-  id: string;
-  email: string;
+  userID: string;
 }
 
 let io: Server;
@@ -19,15 +18,18 @@ export const initSocket = (server: HttpServer) => {
   io.use((socket, next) => {
     try {
       const cookie = socket.handshake.headers.cookie;
+      console.log({cookie})
       if (!cookie) return next(new Error("Unauthorized"));
       const token = cookie
         .split("; ")
-        .find((c) => c.startsWith("token="))
+        .find((c) => c.startsWith("access_token="))
         ?.split("=")[1];
 
       if (!token) return next(new Error("Unauthorized"));
+      console.log("user",jwt.verify(token, process.env.JWT_SECRET!) as SocketUserPayload)
 
       socket.data.user = jwt.verify(token, process.env.JWT_SECRET!) as SocketUserPayload;
+      console.log("socket data user", socket.data.user)
       next();
     } catch {
       next(new Error("Unauthorized"));
@@ -36,11 +38,11 @@ export const initSocket = (server: HttpServer) => {
 
   io.on("connection", (socket) => {
     const user = socket.data.user as SocketUserPayload;
-    const room = `User:${user.id}`;
+    const room = `user:${user.userID}`;
     socket.join(room);
-    console.log(`User ${user.id} connected`);
+    console.log(`user ${user.userID} connected`);
     socket.on("disconnect", () => {
-      console.log(`User ${user.id} disconnected`);
+      console.log(`user ${user.userID} disconnected`);
     });
   });
 
