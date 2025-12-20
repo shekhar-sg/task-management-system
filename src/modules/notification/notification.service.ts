@@ -1,4 +1,4 @@
-import {notificationRepository} from "./notification.repository.js";
+import { notificationRepository } from "./notification.repository.js";
 
 export const notificationService = {
   createTaskAssignmentNotification: async (taskId: string, userId: string, taskTitle: string) => {

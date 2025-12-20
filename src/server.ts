@@ -8,7 +8,7 @@ import authRoutes from "./modules/auth/auth.routes.js";
 import notificationRoutes from "./modules/notification/notification.routes.js";
 import taskRoutes from "./modules/task/task.routes.js";
 import userRoutes from "./modules/user/user.routes.js";
-import {initSocket} from "./socket/index.js";
+import { initSocket } from "./socket/index.js";
 
 dotenv.config();
 const port = process.env.PORT || 5000;

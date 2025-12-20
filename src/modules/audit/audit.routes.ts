@@ -1,6 +1,6 @@
-import {Router} from "express";
-import {requireAuth} from "../../middlewares/auth.middleware.js";
-import {getTaskAuditLogs} from "./audit.controller.js";
+import { Router } from "express";
+import { requireAuth } from "../../middlewares/auth.middleware.js";
+import { getTaskAuditLogs } from "./audit.controller.js";
 
 const router = Router();
 

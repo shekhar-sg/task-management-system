@@ -1,6 +1,6 @@
-import type {NextFunction, Response} from "express";
+import type { NextFunction, Response } from "express";
 import jwt from "jsonwebtoken";
-import type {AuthRequest} from "../types/auth.js";
+import type { AuthRequest } from "../types/auth.js";
 
 export const requireAuth = (req: AuthRequest, res: Response, next: NextFunction) => {
   const token = req.cookies?.access_token;

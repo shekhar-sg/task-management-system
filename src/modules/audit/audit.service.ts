@@ -1,5 +1,5 @@
-import type {TaskAuditAction} from "@prisma/client";
-import {auditRepository} from "./audit.repository.js";
+import type { TaskAuditAction } from "@prisma/client";
+import { auditRepository } from "./audit.repository.js";
 
 export const auditService = {
   log: async (

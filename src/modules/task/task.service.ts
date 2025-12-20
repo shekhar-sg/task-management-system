@@ -1,9 +1,9 @@
-import {type Prisma, Status} from "@prisma/client";
-import {getIO} from "../../socket/index.js";
-import {auditService} from "../audit/audit.service.js";
-import {notificationService} from "../notification/notification.service.js";
-import type {CreateTaskInput, TaskQueryInput, UpdateTaskInput} from "./task.dto.js";
-import {taskRepository} from "./task.repository.js";
+import { type Prisma, Status } from "@prisma/client";
+import { getIO } from "../../socket/index.js";
+import { auditService } from "../audit/audit.service.js";
+import { notificationService } from "../notification/notification.service.js";
+import type { CreateTaskInput, TaskQueryInput, UpdateTaskInput } from "./task.dto.js";
+import { taskRepository } from "./task.repository.js";
 
 export const taskService = {
   createTask: async (userId: string, data: CreateTaskInput) => {
@@ -71,7 +71,7 @@ export const taskService = {
       if (assignedToId) {
         notificationService
           .createTaskAssignmentNotification(updatedTask.id, assignedToId, updatedTask.title)
-          .then(({user:{name}}) => {
+          .then(({ user: { name } }) => {
             io.to(`user:${assignedToId}`).emit("task:assigned", {
               taskId: updatedTask.id,
               title: updatedTask.title,

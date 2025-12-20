@@ -1,5 +1,5 @@
-import type {Prisma, Task} from "@prisma/client";
-import {prisma} from "../../lib/prisma.js";
+import type { Prisma, Task } from "@prisma/client";
+import { prisma } from "../../lib/prisma.js";
 
 export const taskRepository = {
   create: (data: Prisma.TaskCreateInput): Promise<Task> => {
@@ -8,10 +8,10 @@ export const taskRepository = {
   findById: (id: string): Promise<Task | null> => {
     return prisma.task.findUnique({
       where: { id },
-      include:{
-        creator:true,
-        assignedTo:true
-      }
+      include: {
+        creator: true,
+        assignedTo: true,
+      },
     });
   },
   findMany: (

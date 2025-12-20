@@ -1,5 +1,5 @@
-import {prisma} from "../../lib/prisma.js";
-import type {RegisterInput, UpdateProfileInput} from "./auth.dto.js";
+import { prisma } from "../../lib/prisma.js";
+import type { RegisterInput, UpdateProfileInput } from "./auth.dto.js";
 
 export const authRepository = {
   findByEmail: (email: string) => {

@@ -1,5 +1,5 @@
-import {Priority, Status} from "@prisma/client";
-import {z} from "zod";
+import { Priority, Status } from "@prisma/client";
+import { z } from "zod";
 
 export const CreateTaskDto = z.object({
   title: z.string().min(1, "Title is required").max(100, "Title cannot exceed 100 characters"),
@@ -20,17 +20,18 @@ export const UpdateTaskDto = z.object({
 });
 
 const arrayify = <T extends z.ZodTypeAny>(schema: T) =>
-    z.preprocess(
-        (val:string) => val?.split(","),
-        z.array(schema).optional()
-    );
+  z.preprocess((val: string) => val?.split(","), z.array(schema).optional());
 
 export const TaskQueryDto = z.object({
   view: arrayify(z.enum(["CREATED", "ASSIGNED", "ALL"])),
   status: arrayify(z.enum(Status)),
   priority: arrayify(z.enum(Priority)),
   sortByDueDate: z.enum(["asc", "desc"]).optional(),
-  overdue: z.string().transform((val) => val === "true").pipe(z.boolean()).optional(),
+  overdue: z
+    .string()
+    .transform((val) => val === "true")
+    .pipe(z.boolean())
+    .optional(),
 });
 
 export type CreateTaskInput = z.infer<typeof CreateTaskDto>;

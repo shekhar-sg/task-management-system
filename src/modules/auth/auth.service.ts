@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import type {LoginInput, RegisterInput, UpdateProfileInput} from "./auth.dto.js";
-import {authRepository} from "./auth.repository.js";
+import type { LoginInput, RegisterInput, UpdateProfileInput } from "./auth.dto.js";
+import { authRepository } from "./auth.repository.js";
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
 export const authService = {

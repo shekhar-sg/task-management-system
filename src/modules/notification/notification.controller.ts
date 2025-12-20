@@ -1,6 +1,6 @@
-import type {Response} from "express";
-import type {AuthRequest} from "../../types/auth.js";
-import {notificationService} from "./notification.service.js";
+import type { Response } from "express";
+import type { AuthRequest } from "../../types/auth.js";
+import { notificationService } from "./notification.service.js";
 
 export const getMyNotifications = async (req: AuthRequest, res: Response) => {
   try {
@@ -11,7 +11,7 @@ export const getMyNotifications = async (req: AuthRequest, res: Response) => {
       message: "Notifications retrieved successfully",
       notifications,
     });
-  } catch (error) {
+  } catch (_error) {
     return res.status(500).json({
       message: "Internal server error",
     });
