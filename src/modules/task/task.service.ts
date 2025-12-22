@@ -158,6 +158,7 @@ export const taskService = {
     if (filters.overdue) {
       where.dueDate = { lt: new Date() };
       where.status = { not: Status.COMPLETED };
+      where.assignedToId={equals: userid};
     }
     const orderBy = filters.sortByDueDate ? { dueDate: filters.sortByDueDate } : undefined;
 
