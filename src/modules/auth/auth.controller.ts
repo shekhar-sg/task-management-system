@@ -42,10 +42,11 @@ export const login = async (req: Request, res: Response) => {
 };
 
 export const logout = async (_req: Request, res: Response) => {
+  const isProduction = process.env.NODE_ENV === "production";
   res.clearCookie("access_token", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: isProduction ? "none" : "lax",
   });
   res.status(200).json({
     message: "Logged out successfully",
