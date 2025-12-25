@@ -2,12 +2,17 @@ import { type Prisma, Status } from "@prisma/client";
 import { getIO } from "../../socket/index.js";
 import { auditService } from "../audit/audit.service.js";
 import { notificationService } from "../notification/notification.service.js";
+import { userRepository } from "../user/user.repository.js";
 import type { CreateTaskInput, TaskQueryInput, UpdateTaskInput } from "./task.dto.js";
 import { taskRepository } from "./task.repository.js";
 
 export const taskService = {
   createTask: async (userId: string, data: CreateTaskInput) => {
     const io = getIO();
+    const user = await userRepository.findById(userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
     const task = await taskRepository.create({
       title: data.title,
       description: data.description,
@@ -36,11 +41,11 @@ export const taskService = {
       );
       notificationService
         .createTaskAssignmentNotification(task.id, task.assignedToId, task.title)
-        .then(({ user: { name } }) => {
+        .then(() => {
           io.to(`user:${task.assignedToId}`).emit("task:assigned", {
             taskId: task.id,
             title: task.title,
-            assignedBy: name,
+            assignedBy: user.name,
           });
         });
     }
@@ -52,6 +57,10 @@ export const taskService = {
   updateTask: async (taskId: string, userId: string, data: UpdateTaskInput) => {
     const io = getIO();
     const task = await taskRepository.findById(taskId);
+    const user = await userRepository.findById(userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
     if (!task) {
       throw new Error("Task not found");
     }
@@ -91,11 +100,11 @@ export const taskService = {
       if (assignedToId) {
         notificationService
           .createTaskAssignmentNotification(updatedTask.id, assignedToId, updatedTask.title)
-          .then(({ user: { name } }) => {
+          .then(() => {
             io.to(`user:${assignedToId}`).emit("task:assigned", {
               taskId: updatedTask.id,
               title: updatedTask.title,
-              assignedBy: name,
+              assignedBy: user.name,
             });
           });
       }
@@ -158,7 +167,7 @@ export const taskService = {
     if (filters.overdue) {
       where.dueDate = { lt: new Date() };
       where.status = { not: Status.COMPLETED };
-      where.assignedToId={equals: userid};
+      where.assignedToId = { equals: userid };
     }
     const orderBy = filters.sortByDueDate ? { dueDate: filters.sortByDueDate } : undefined;
 
